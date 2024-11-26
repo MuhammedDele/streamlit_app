@@ -20,7 +20,7 @@ Before you begin, ensure you have the following installed on your system:
 
 Retrieve the pre-built Docker image from Docker Hub by running:
 ```sh
-docker pull <your-username>/streamlit-app:latest
+docker pull muhammeddele/streamlit-app:latest
 ```
 
 ---
@@ -31,7 +31,7 @@ docker pull <your-username>/streamlit-app:latest
 
 Run the Docker container with the following command:
 ```sh
-docker run -p 8501:8501 <your-username>/streamlit-app:latest
+docker run -p 8501:8501 muhammeddele/streamlit-app:latest
 ```
 
 Open your web browser and go to [http://localhost:8501](http://localhost:8501) to access the application.
@@ -94,7 +94,7 @@ Ensure Docker is installed and running. Open Docker Desktop if needed and retry.
 
 If port `8501` is in use, map the container to a different port:
 ```sh
-docker run -p <host_port>:8501 <your-username>/streamlit-app:latest
+docker run -p <host_port>:8501 muhammeddele/streamlit-app:latest
 ```
 Replace `<host_port>` with an available port number, e.g., `8502`.
 
