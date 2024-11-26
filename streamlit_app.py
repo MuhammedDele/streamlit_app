@@ -11,8 +11,6 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import joblib
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 def get_column_types(data):
     """Identify numerical and categorical columns"""
@@ -63,11 +61,11 @@ def plot_feature_distributions(data, numerical_cols):
     )
     return fig
 
-def plot_prediction_vs_actual(y_valid, predictions):
+def plot_prediction_vs_actual(y_valid, predictions, target_column):
     """Create scatter plot of predicted vs actual values"""
     fig = px.scatter(x=y_valid, y=predictions,
-                    labels={'x': 'Actual Price', 'y': 'Predicted Price'},
-                    title='Predicted vs Actual Prices')
+                    labels={'x': f'Actual {target_column}', 'y': f'Predicted {target_column}'},
+                    title=f'Predicted vs Actual {target_column}')
     fig.add_trace(
         go.Scatter(x=[y_valid.min(), y_valid.max()],
                   y=[y_valid.min(), y_valid.max()],
@@ -77,17 +75,18 @@ def plot_prediction_vs_actual(y_valid, predictions):
     )
     return fig
 
-def plot_residuals(y_valid, predictions):
+def plot_residuals(y_valid, predictions, target_column):
     """Create residual plot"""
     residuals = predictions - y_valid
     fig = px.scatter(x=predictions, y=residuals,
-                    labels={'x': 'Predicted Price', 'y': 'Residuals'},
-                    title='Residual Plot')
+                    labels={'x': f'Predicted {target_column}', 'y': 'Residuals'},
+                    title=f'Residual Plot ({target_column})')
     fig.add_hline(y=0, line_dash="dash", line_color="red")
     return fig
 
-def train_model(data, target_column):
+def train_model(data):
     """Train the model and return pipeline, predictions, and metrics"""
+    target_column = data.columns[-1]  # Use the last column as the target
     y = data[target_column]
     X = data.drop([target_column], axis=1)
     
@@ -107,13 +106,13 @@ def train_model(data, target_column):
         'r2': r2_score(y_valid, predictions)
     }
     
-    return pipeline, predictions, y_valid, metrics, numerical_cols
+    return pipeline, predictions, y_valid, metrics, numerical_cols, target_column
 
 # Streamlit app
-st.title("Advanced Housing Price Predictor")
+st.title("Flexible Prediction Application")
 st.write("""
-This application trains a Random Forest model to predict housing prices and provides 
-detailed visualizations of the data and model performance.
+Upload a dataset for regression. The last column in the dataset will be considered 
+the target variable, and the remaining columns will be used as features.
 """)
 
 uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
@@ -132,17 +131,19 @@ if uploaded_file is not None:
     
     # Train model and get results
     with st.spinner('Training model...'):
-        pipeline, predictions, y_valid, metrics, numerical_cols = train_model(data, 'Price')
+        pipeline, predictions, y_valid, metrics, numerical_cols, target_column = train_model(data)
     
     # Model Performance Metrics
     st.header("Model Performance")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Mean Absolute Error", f"${metrics['mae']:,.2f}")
+        st.metric("Mean Absolute Error", f"{metrics['mae']:.2f}")
     with col2:
-        st.metric("Root Mean Squared Error", f"${metrics['rmse']:,.2f}")
+        st.metric("Root Mean Squared Error", f"{metrics['rmse']:.2f}")
     with col3:
         st.metric("R² Score", f"{metrics['r2']:.3f}")
+    
+    st.write(f"Target column used for prediction: **{target_column}**")
     
     # Data Visualization Section
     st.header("Data Visualization")
@@ -161,13 +162,13 @@ if uploaded_file is not None:
     st.header("Model Predictions Analysis")
     
     # Predicted vs Actual
-    st.subheader("Predicted vs Actual Prices")
-    pred_vs_actual_fig = plot_prediction_vs_actual(y_valid, predictions)
+    st.subheader(f"Predicted vs Actual {target_column}")
+    pred_vs_actual_fig = plot_prediction_vs_actual(y_valid, predictions, target_column)
     st.plotly_chart(pred_vs_actual_fig)
     
     # Residuals Plot
     st.subheader("Residuals Analysis")
-    residuals_fig = plot_residuals(y_valid, predictions)
+    residuals_fig = plot_residuals(y_valid, predictions, target_column)
     st.plotly_chart(residuals_fig)
     
     # Feature Importance
@@ -189,7 +190,7 @@ if uploaded_file is not None:
         st.plotly_chart(fig)
     
     # Model Download Section
-    st.header("Download Model")
+    st.header("Download Trained Model")
     model_filename = "random_forest_pipeline.pkl"
     joblib.dump(pipeline, model_filename)
     
